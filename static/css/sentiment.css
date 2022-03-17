@@ -1,0 +1,117 @@
+*{
+    box-sizing: border-box;
+}
+
+/* The navigation bar */
+.navbar {
+    overflow: hidden;
+    background-color:antiquewhite;
+    position: fixed; /* Set the navbar to fixed position */
+    top: 0; /* Position the navbar at the top of the page */
+    width: 100%; /* Full width */    
+}
+
+/* Links inside the navbar */
+.navbar a {
+    float: left;
+    display: block;
+    color: black;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: larger;
+}
+
+/* Change background on mouse-over */
+.navbar a:hover {
+background: rgb(248, 211, 164);
+color: black;
+}
+
+/* Main content */
+/* .main {
+    margin-top: 30px; Add a top margin to avoid content overlay
+    border: 2px red solid;
+} */
+
+#sentiment-text{
+    font-size: 30px;
+    font-weight: 600;
+    margin-top:50px;
+    text-align: center;
+    text-decoration: underline;
+    /* border: 2px solid red; */
+    
+}
+
+.column1 {
+    float: left;
+    width: 33.33%;
+    padding: 5px;
+    /* border: 2px saddlebrown solid; */
+    margin-left: 10px;
+}
+.column2 {
+    float: right;
+    width: 33.33%;
+    padding: 5px;
+    /* border: 2px black solid; */
+    margin-right: 10px;
+}
+/* Clearfix (clear floats) */
+.row{
+    /* border: 2px solid blue; */
+    margin-top: 40px;
+}
+.row::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+.text-style{
+    font-size: 28px;
+    text-align: center;
+    font-weight:500;
+    /* border: 2px black solid; */
+    margin-top: 10px;
+}
+.style-col{
+    background-color: antiquewhite;
+    border-radius: 20px;
+}
+#img1{
+    /* border:2px solid red; */
+    width:90%;
+    margin-left:20px;
+    margin-right: 10px;
+    text-align: center;
+}
+.btn-div{
+    border-radius: 10px;
+    font-size: medium;
+    margin-left: 160px;
+}
+.btn{
+    text-decoration: none;
+    border: none;
+    border-radius: 10px;
+    font-size: 20px;
+    padding: 10px;
+    cursor: pointer;
+}
+#btn1 {
+    background-color: yellowgreen;
+}
+#btn1:hover{
+    background-color: rgba(153, 205, 50, 0.74);
+}
+#btn2 {
+    background-color:lightcoral
+}
+#btn2:hover{
+    background-color: rgba(240, 128, 128, 0.774);
+}
+a{
+    text-decoration: none;
+    color: black;
+}

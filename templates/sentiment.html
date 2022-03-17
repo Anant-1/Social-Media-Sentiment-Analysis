@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sentiment</title>
+    <link rel="stylesheet" href="./static/css/sentiment.css" />
+</head>
+
+<body>
+    <div id="sentiment-text">
+        <p>{{search_word}} Car Sentiment</p>
+    </div>
+
+    <div class="row">
+        <div class="column1 style-col">
+            <p class="text-style">Tweets Sentiments</p>
+            <img id="img1" src="/static/img/SentimentAnalysis.png" alt="Sentiment Analysis" />
+
+            <div class="btn-div">
+                <button type="button" class="btn" id="btn1">
+                    <a href="/positive">Positive</a>
+                </button>
+
+                <button type="button" id="btn2" class="btn">
+                    <a href="/negative">Negative</a>
+                </button>
+            </div>
+        </div>
+
+        <div class="column2 style-col">
+            <p class="text-style">Features Rating</p>
+            <img src="/static/img/featuresBarGraph.png" alt="Features Rating" style="width: 100%" />
+        </div>
+    </div>
+</body>
+
+</html>

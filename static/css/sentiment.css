@@ -28,19 +28,12 @@ background: rgb(248, 211, 164);
 color: black;
 }
 
-/* Main content */
-/* .main {
-    margin-top: 30px; Add a top margin to avoid content overlay
-    border: 2px red solid;
-} */
-
 #sentiment-text{
     font-size: 30px;
     font-weight: 600;
     margin-top:50px;
     text-align: center;
     text-decoration: underline;
-    /* border: 2px solid red; */
     
 }
 
@@ -48,19 +41,17 @@ color: black;
     float: left;
     width: 33.33%;
     padding: 5px;
-    /* border: 2px saddlebrown solid; */
     margin-left: 10px;
 }
 .column2 {
     float: right;
     width: 33.33%;
     padding: 5px;
-    /* border: 2px black solid; */
     margin-right: 10px;
 }
 /* Clearfix (clear floats) */
 .row{
-    /* border: 2px solid blue; */
+    
     margin-top: 40px;
 }
 .row::after {
@@ -72,7 +63,6 @@ color: black;
     font-size: 28px;
     text-align: center;
     font-weight:500;
-    /* border: 2px black solid; */
     margin-top: 10px;
 }
 .style-col{
@@ -80,7 +70,6 @@ color: black;
     border-radius: 20px;
 }
 #img1{
-    /* border:2px solid red; */
     width:90%;
     margin-left:20px;
     margin-right: 10px;

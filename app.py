@@ -1,7 +1,5 @@
-from turtle import position
 from flask import Flask, render_template, request
 from sentiment_analysis import *
-import pandas as pd
 app = Flask(__name__)
 
 class Tweet:
@@ -14,36 +12,50 @@ class Tweet:
         
 
 @app.route('/')
-def load_page():
+def load_home_page():
     return render_template('index.html')
 
 @app.route('/input', methods=['GET', 'POST'])
 def searching():
     if request.method == 'POST':
         search_word = request.form['searchinput']
+        type_prod = request.form['chooseprod']
         global positive, negative
-        positive, negative = main(search_word)
-        return render_template('sentiment.html', search_word = search_word.capitalize())    
+
+        #calling of main function
+        positive, negative = main(search_word, type_prod)
+        
+        if type_prod == 'car':
+            disp_string = search_word.capitalize() + ' ' + 'Car'
+        elif type_prod == 'bike':
+            disp_string = search_word.capitalize() + ' ' + 'Bike'
+        elif type_prod == 'phone':
+            disp_string = search_word.capitalize() + ' ' + 'Phone'
+        
+        template = 'sentiment.html'
+        if len(positive) == 0 and len(negative) == 0:
+            template = 'empty.html'
+        return render_template(template, search_word = disp_string)    
 
 @app.route('/about', methods=['GET', 'POST'])
 def about_page():
     return render_template('about.html')
 
 @app.route('/positive', methods=['GET', 'POST'])
-def positive():
+def show_positive_tweet():
     allTweet = []
     for i in range(positive.shape[0]):
         tweet = Tweet(tweet = positive.iloc[i, 0], polarity=round(positive.iloc[i, 2], 2), sentiment=positive.iloc[i, 3])
         allTweet.append(tweet)
-    return render_template('positive.html', allTweet = allTweet, text = "Positive")
+    return render_template('show_tweet.html', allTweet = allTweet, text = "Positive")
 
 @app.route('/negative', methods=['GET', 'POST'])
-def negative():
+def show_negative_tweet():
     allTweet = []
     for i in range(negative.shape[0]):
         tweet = Tweet(tweet = negative.iloc[i, 0], polarity=round(negative.iloc[i, 2], 2), sentiment=negative.iloc[i, 3])
         allTweet.append(tweet)
-    return render_template('positive.html', allTweet = allTweet, text = "Negative")
+    return render_template('show_tweet.html', allTweet = allTweet, text = "Negative")
 
 if __name__ == '__main__':
     app.run(debug = True)

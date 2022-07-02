@@ -1,4 +1,3 @@
-from audioop import minmax
 import tweepy
 from textblob import TextBlob
 import pandas as pd
@@ -9,6 +8,7 @@ from nltk.probability import FreqDist
 import nltk
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 # Initialize twitter account credentials
 consumer_key = "82ZBWN7VF93E2PxiduNJxFt5b"
@@ -22,92 +22,108 @@ auth.set_access_token(access_token, access_token_secret)
 twitterApi = tweepy.API(auth, wait_on_rate_limit=True)
 
 # LIST OF FEATURES
-features = ["", "engine", "wheels", "ev", "airbags", "average", "economy", "safety", "display", "infotainment",
+features_car = ["", "engine", "wheels", "ev", "airbags", "average", "economy", "safety", "display", "infotainment",
             "cruise", "camera", "comfort", "brakes", "seats"]
-features1 = [""]
+features_bike = ["", 'engine', 'wheel', 'mileage', 'average', 'safety', 'speed']
 
-def main(searchTag):
+features_phone = ['', 'battery', 'camera', 'display', 'processor', 'front camera', 'rear camera', 'weight']
+features = []
+
+def main(search_tag, type_prod):
     pd.set_option("display.max_colwidth", None)
-    # SEARCH TAG
-    searchtag = searchTag
+    # SEARCH TAG, PRODUCT TYPE
+    print(type_prod)
+    if type_prod == 'car':
+        features = features_car
+    elif type_prod == 'bike':
+        features = features_bike
+    elif type_prod == 'phone':
+        features = features_phone
+    
     # CREATING MAIN DATAFRAME
-    global maindf
-    maindf = creatingDataFrame(searchtag, features)
+    maindf = creating_data_frame(search_tag, features)
+    print(maindf.shape)
+    print(maindf.head)
+    #Join with space that length is greater than 2, Here x is an argument
     maindf['Tweet'] = maindf['Tweet'].apply(lambda x: ' '.join([w for w in x.split() if len(w) > 2]))
-    maindf['Tweet'] = maindf['Tweet'].apply(cleanUpTweet)
+    maindf['Tweet'] = maindf['Tweet'].apply(clean_up_tweet)
     maindf['Tweet'] = maindf['Tweet'].apply(remove_emojis)
     maindf['Tweet'] = maindf['Tweet'].apply(to_lower_case)
     maindf['Tweet'] = maindf['Tweet'].apply(cleaning_punctuations)
     maindf['Tweet'] = maindf['Tweet'].apply(remove_spaces)
+    # Remove Empty Tweets from Main DataFrame
     maindf.drop(maindf[maindf['Tweet'] == ''].index, inplace=True)
+    # Remove Duplicates Tweets from Main DataFrame
     maindf.drop_duplicates(subset="Tweet", keep='first', inplace=True)
-    maindf['Subjectivity'] = maindf['Tweet'].apply(getTweetSubjectivity)
-    maindf['Polarity'] = maindf['Tweet'].apply(getTweetPolarity)
-    maindf['Sentiment'] = maindf['Polarity'].apply(getTextAnalysis)
+
+    # Creating Three Columns of Subjectivity, Polarity, Sentiment and assign values by calling the getTweetSubjectivity(), getTweetPolarity(), getTextAnalysis()
+    maindf['Subjectivity'] = maindf['Tweet'].apply(get_tweet_subjectivity)
+    maindf['Polarity'] = maindf['Tweet'].apply(get_tweet_polarity)
+    maindf['Sentiment'] = maindf['Polarity'].apply(get_tweet_analysis)
+
+    # If we want to save all the tweets information into the csv file
     # maindf.to_csv('tweets1.csv')
 
-    global pos
-    positive = maindf[maindf['Sentiment'] == 'Positive']
-    pos = round(((positive.shape[0] / maindf.shape[0]) * 100), 2)
+    # Calculate percentage of positive, negative and neutral tweets
+    positive_df = maindf[maindf['Sentiment'] == 'Positive']
+    positive_percent = round(((positive_df.shape[0] / maindf.shape[0]) * 100), 2)
+    
+    negative_df = maindf[maindf['Sentiment'] == 'Negative']
+    negative_percent = round(((negative_df.shape[0] / maindf.shape[0]) * 100), 2)
 
-    global neg
-    negative = maindf[maindf['Sentiment'] == 'Negative']
-    neg = round(((negative.shape[0] / maindf.shape[0]) * 100), 2)
-
-    global neut
     neutral = maindf[maindf['Sentiment'] == 'Neutral']
-    neut = round(((neutral.shape[0] / maindf.shape[0]) * 100), 2)
+    neutral_percent = round(((neutral.shape[0] / maindf.shape[0]) * 100), 2)
 
-    # print(f"{pos} % of positive")
-    # print(f"{neg} % of negative")
-    # print(f"{neut} % of neutral")
+    # Creating the string of all tweets
+    pos_tweet_str = create_str_tweets(positive_df)
+    neg_tweet_str = create_str_tweets(negative_df)
 
-    pos_str = create_str(positive)
-    neg_str = create_str(negative)
+    # Creating the tokens of all tweets string
+    pos_tokens, neg_tokens = tokenize_str(pos_tweet_str, neg_tweet_str)
 
-    # print(pos_str, "\n", neg_str)
+    # Finding the nouns from all tokens
+    pos_nouns_lst = find_noun(pos_tokens)
+    neg_nouns_lst = find_noun(neg_tokens)
 
-    pos_tokens, neg_tokens = tokenizestr(pos_str, neg_str)
-    # print(pos_tokens, "\n", neg_tokens)
+    # Finding the frequency
+    pos_freq_lst = find_frequency(pos_nouns_lst)
+    neg_freq_lst = find_frequency(neg_nouns_lst)
 
-    pos_nouns = findnoun(pos_tokens)
-    neg_nouns = findnoun(neg_tokens)
+    # If rating is not found then we return an empty list
+    lst_features, lst_rating = find_percent_pos(pos_freq_lst, neg_freq_lst, features)
+    if(len(lst_features) == 0 and len(lst_rating) == 0):
+        print('not found')
+        return [],[]
 
-    # print(pos_nouns, "\n", neg_nouns)
-    # print(len(pos_nouns), "\n", len(neg_nouns))
+    #Creating a dataframe of features and their rating
+    features_rating_df = create_df_features_rating(lst_features, lst_rating)
+    
+    # Plotting Pie Chart
+    plotting_sentiment_pie_chart(positive_percent, negative_percent, neutral_percent)
 
-    pos_freq_lst = findFrequency(pos_nouns)
-    neg_freq_lst = findFrequency(neg_nouns)
+    # Plotting Bar Graph
+    plotting_bar_graph(features_rating_df)
+    
+    return positive_df, negative_df
 
-    # print(type(pos_freq_lst), "\n", neg_freq_lst)
-
-    lst_features, lst_rating = find_percent_pos(pos_freq_lst, neg_freq_lst)
-
-    # print(lst_features, lst_rating)
-
-    df_pos = create_DF_features_rating(lst_features, lst_rating)
-    # print(df_pos.head())
-    plottingSentimentPieChart()
-    plottingBarGraph(df_pos)
-    # print(positive.head())
-    return positive, negative
-
+# STAGE 1 - DATA GATHERING
 # CREATING DATAFRAME
-def creatingDataFrame(search, features):
+def creating_data_frame(search_word, features):
     # print(len(features))
     lst = []
     for feature in features:
-        search_words = search + " " + feature  # enter your words
+        search_words = search_word + " " + feature 
         date_since = "2010-01-01"
         public_tweets = tweepy.Cursor(twitterApi.search_tweets, q=search_words, count=None, lang="en",
                                       since_id=date_since).items(100)
-        df = pd.DataFrame(data=[[tweet.text] for tweet in public_tweets], columns=['Tweet'])
+        df = pd.DataFrame(data=[tweet.text for tweet in public_tweets], columns=['Tweet'])
         lst.append(df)
     return pd.concat(lst, ignore_index=False)
 
 
-# STAGE 1 - DATA CLEANING
-def cleanUpTweet(txt):
+# STAGE 2 - DATA CLEANING
+# Remove Wildcards Characters
+def clean_up_tweet(txt):
     txt = re.sub(r'@[A-Za-z0-9_]+', '', txt)
     txt = re.sub("#[A-Za-z0-9_]+", "", txt)
     txt = re.sub("^\\s+|\\s+$", "", txt)
@@ -150,12 +166,12 @@ def remove_emojis(tweet):
     return re.sub(emoji, '', tweet)
 
 
-def to_lower_case(txt):
-    return str.lower(txt)
+def to_lower_case(tweet):
+    return str.lower(tweet)
 
 
-def remove_spaces(txt):
-    return txt.strip()
+def remove_spaces(tweet):
+    return tweet.strip()
 
 
 def cleaning_punctuations(text):
@@ -164,20 +180,16 @@ def cleaning_punctuations(text):
     return text.translate(translator)
 
 
-# STAGE 2 - GETTING SENTIMENTS USING TEXT BLOB
-def getTweetSubjectivity(txt):
-    return TextBlob(txt).sentiment.subjectivity
+# STAGE 3 - GETTING SENTIMENTS USING TEXT BLOB AND PLOT THE BAR GRAPH AND PIE CHART
+def get_tweet_subjectivity(tweet):
+    return TextBlob(tweet).sentiment.subjectivity
 
 
-def getTweetPolarity(txt):
-    return TextBlob(txt).sentiment.polarity
+def get_tweet_polarity(tweet):
+    return TextBlob(tweet).sentiment.polarity
 
 
-# maindf['Subjectivity'] = maindf['Tweet'].apply(getTweetSubjectivity)
-# maindf['Polarity'] = maindf['Tweet'].apply(getTweetPolarity)
-
-
-def getTextAnalysis(polarity):
+def get_tweet_analysis(polarity):
     if polarity < 0:
         return "Negative"
     elif polarity == 0:
@@ -187,35 +199,36 @@ def getTextAnalysis(polarity):
 
 
 # CREATING PIE GRAPH
-def plottingSentimentPieChart():
+def plotting_sentiment_pie_chart(positive_percent, negative_percent, neutral_percent):
     explode = (0, 0.1, 0)
     labels = 'Positive', 'Negative', 'Neutral'
-    sizes = [pos, neg, neut]
+    sizes = [positive_percent, negative_percent, neutral_percent]
     colors = ['yellowgreen', 'lightcoral', 'gold']
     plt.pie(sizes, explode=explode, colors=colors, autopct='%1.1f%%', startangle=120)
     plt.legend(labels, loc=(-0.05, 0.05), shadow=True)
     plt.axis('equal')
-    plt.savefig("C:\\Users\\anant\\OneDrive\\Desktop\data\\Project\\Social Media Sentiment Analysis\\static\img\\SentimentAnalysis.png")
+    cwd = os.getcwd()
+    save_dir = os.path.join(cwd, 'static', 'img', 'SentimentAnalysis.png')
+    plt.savefig(save_dir)
     plt.close()
     return
 
 
-def create_str(sentimentdata):
+def create_str_tweets(sentiment_data_frame):
     sentiment_str = """"""
-    sentiment_len = sentimentdata.shape[0]
+    sentiment_len = sentiment_data_frame.shape[0]
     for i in range(sentiment_len):
-        # print(positive.iloc[i,0])
-        sentiment_str += ' ' + sentimentdata.iloc[i, 0]
+        sentiment_str += ' ' + sentiment_data_frame.iloc[i, 0]
     return sentiment_str
 
 
-def tokenizestr(pos_str, neg_str):
-    neg_text_token = word_tokenize(neg_str)
-    pos_text_token = word_tokenize(pos_str)
-    return pos_text_token, neg_text_token
+def tokenize_str(pos_str, neg_str):
+    neg_tweet_token = word_tokenize(neg_str)
+    pos_tweet_token = word_tokenize(pos_str)
+    return pos_tweet_token, neg_tweet_token
 
 
-def findnoun(tokens):
+def find_noun(tokens):
     noun_lst = []
     for token in tokens:
         if nltk.pos_tag([token])[0][1] == 'NN':
@@ -223,14 +236,14 @@ def findnoun(tokens):
     return noun_lst
 
 
-def findFrequency(nounList):
+def find_frequency(noun_list):
     fdist = FreqDist()
-    for noun in nounList:
+    for noun in noun_list:
         fdist[noun] += 1
     return fdist
 
 
-def find_percent_pos(fdist_pos, fdist_neg):
+def find_percent_pos(fdist_pos, fdist_neg, features):
     lst_features = []
     lst_rating = []
     for feature in features:
@@ -238,22 +251,24 @@ def find_percent_pos(fdist_pos, fdist_neg):
             lst_features.append(feature)
             rating = (fdist_pos[feature] / (fdist_neg[feature] + fdist_pos[feature])) * 10
             lst_rating.append(int(rating))
-    # print(feature, " -> ", int(rating), " rating")
     return lst_features, lst_rating
 
 
-def create_DF_features_rating(features, rating):
+def create_df_features_rating(features, rating):
     df_positive = pd.DataFrame({'Features': features, 'Rating': rating})
     return df_positive
 
 
-def plottingBarGraph(df_pos):
+def plotting_bar_graph(df_pos):
     df_positive_plot = df_pos.nlargest(df_pos.shape[0], columns='Rating')
     sns_plot = sns.barplot(data=df_positive_plot, y='Features', x='Rating')
     sns.despine()
     fig = sns_plot.get_figure()
-    fig.savefig("C:\\Users\\anant\\OneDrive\\Desktop\data\\Project\\Social Media Sentiment Analysis\\static\img\\featuresBarGraph.png")
+    cwd = os.getcwd()
+    save_dir = os.path.join(cwd, 'static', 'img', 'featuresBarGraph.png')
+    fig.savefig(save_dir)
     plt.close(fig)
 
+# This runs the code without web intergration
 if __name__ == '__main__':
-    main("BMW")
+    main("realme 6", 'phone')
